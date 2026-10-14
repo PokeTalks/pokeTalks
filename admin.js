@@ -39,19 +39,32 @@ function addButton(parent, label, action) {
   parent.appendChild(button);
 }
 
+
 async function requireAdmin() {
   const { data, error } = await db.auth.getUser();
-  if (error || !data.user) return false;
 
-  const { data: admin, error: adminError } = await db
-    .from("poketalks_admins")
-    .select("user_id")
-    .eq("user_id", data.user.id)
-    .maybeSingle();
+  if (error || !data.user) {
+    currentUser = null;
+    $("loginPanel").hidden = false;
+    $("dashboard").hidden = true;
+    return false;
+  }
 
-  if (adminError || !admin) {
+  // Verify through the existing secure database function.
+  const { data: allowed, error: adminError } = await db.rpc(
+    "is_poketalks_admin"
+  );
+
+  if (adminError || allowed !== true) {
     await db.auth.signOut();
-    status("This account is not authorized as a PokeTalks admin.");
+    currentUser = null;
+    $("loginPanel").hidden = false;
+    $("dashboard").hidden = true;
+    status(
+      adminError
+        ? "Admin verification failed: " + adminError.message
+        : "This account is not an authorized admin."
+    );
     return false;
   }
 
@@ -59,6 +72,7 @@ async function requireAdmin() {
   $("loginPanel").hidden = true;
   $("dashboard").hidden = false;
   status("Logged in as " + currentUser.email);
+
   return true;
 }
 
