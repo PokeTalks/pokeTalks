@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080c13">
+  <title>PokeTalks | Pokémon Fan Universe</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="navbar">
+    <a class="brand" href="#home">
+      <img src="assets/logo.png" alt="PokeTalks logo">
+    </a>
+
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+
+    <nav id="nav">
+      <a href="#home">Home</a>
+      <a href="#blog">Blog</a>
+      <a href="#quiz">PokéQuiz</a>
+      <a href="#videos">Videos</a>
+      <a href="#pokemon">Pokémon</a>
+      <a href="#contact">Contact</a>
+    </nav>
+
+    <a class="admin-link" href="#admin">Admin</a>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-copy">
+        <span class="eyebrow">YOUR POKÉMON UNIVERSE</span>
+        <h1>Every Pokémon has a <span>story.</span></h1>
+        <p>Discover Pokémon, test your knowledge, and explore fan creations at PokeTalks.</p>
+        <a class="button" href="#quiz">Play PokéQuiz →</a>
+      </div>
+      <div class="hero-image">
+        <img src="assets/banner.png" alt="PokeTalks Pokémon adventure banner">
+      </div>
+    </section>
+
+    <section class="section" id="blog">
+      <span class="eyebrow">LATEST UPDATES</span>
+      <h2>From the Pokémon world</h2>
+      <div class="panel">
+        <h3>Welcome to PokeTalks!</h3>
+        <p>News, fan creations, videos and Pokémon quizzes — all in one place.</p>
+      </div>
+    </section>
+
+    <section class="section alternate" id="quiz">
+      <span class="eyebrow">10 RANDOM QUESTIONS</span>
+      <h2>PokéQuiz ⚡</h2>
+      <div class="panel quiz-panel">
+        <p id="quizProgress">Ready?</p>
+        <h3 id="quizQuestion">Can you identify the Pokémon?</h3>
+        <div id="quizAnswers" class="answer-grid"></div>
+        <p id="quizFeedback" aria-live="polite"></p>
+        <button class="button" id="quizNext">Start quiz</button>
+      </div>
+    </section>
+
+    <section class="section" id="videos">
+      <span class="eyebrow">WATCH & DISCOVER</span>
+      <h2>Video Showcase</h2>
+      <p class="muted">New videos will appear here when added through Admin.</p>
+      <div id="videoGrid" class="card-grid"></div>
+    </section>
+
+    <section class="section alternate" id="pokemon">
+      <span class="eyebrow">COMMUNITY COLLECTION</span>
+      <h2>Pokémon Gallery</h2>
+      <div id="pokemonGrid" class="card-grid"></div>
+    </section>
+
+    <section class="section" id="contact">
+      <span class="eyebrow">SAY HELLO</span>
+      <h2>Contact PokeTalks</h2>
+      <p class="muted">Add your contact email or social links when you're ready.</p>
+      <div class="socials">
+        <a id="youtubeLink" href="#" target="_blank" rel="noopener noreferrer">YouTube ↗</a>
+        <a id="instagramLink" href="#" target="_blank" rel="noopener noreferrer">Instagram ↗</a>
+        <a id="telegramLink" href="#" target="_blank" rel="noopener noreferrer">Telegram ↗</a>
+      </div>
+    </section>
+
+    <section class="section alternate" id="admin">
+      <span class="eyebrow">SITE MANAGEMENT</span>
+      <h2>Admin Panel</h2>
+      <p class="muted warning">
+        Starter demo only: this panel is not password-protected.
+        Do not publish it as a public admin panel.
+      </p>
+
+      <div class="admin-grid">
+        <form id="pokemonForm" class="panel">
+          <h3>Add Pokémon</h3>
+          <label>Name<input name="name" required placeholder="Pokémon name"></label>
+          <label>Type<input name="type" required placeholder="Electric / Fire"></label>
+          <label>Description<textarea name="description" required></textarea></label>
+          <label>Image<input name="image" type="file" accept="image/*" required></label>
+          <button class="button">Add Pokémon</button>
+        </form>
+
+        <form id="videoForm" class="panel">
+          <h3>Add Video</h3>
+          <label>Title<input name="title" required></label>
+          <label>Thumbnail<input name="image" type="file" accept="image/*" required></label>
+          <label>Linkvertise URL<input name="url" type="url" placeholder="Add later if needed"></label>
+          <button class="button">Add Video</button>
+        </form>
+
+        <form id="socialForm" class="panel">
+          
+<div class="socials">
+  <a href="https://youtube.com/@poketalks_yt?si=emFFmVNVH7K7Em3p"
+     target="_blank" rel="noopener noreferrer">
+    ▶ YouTube
+  </a>
+
+  <a href="https://instagram.com/poketalks3?exln=M2JibHM3YjNtdTN0"
+     target="_blank" rel="noopener noreferrer">
+    ◎ Instagram
+  </a>
+
+  <a href="https://t.me/PokeTalks_Official"
+     target="_blank" rel="noopener noreferrer">
+    ✈ Telegram
+  </a>
+</div>
+        </form>
+      </div>
+
+      <h3 class="manage-heading">Manage Pokémon</h3>
+      <div id="managePokemon" class="manage-list"></div>
+      <h3 class="manage-heading">Manage Videos</h3>
+      <div id="manageVideos" class="manage-list"></div>
+      <button class="button danger" id="resetDemo">Reset demo content</button>
+    </section>
+  </main>
+
+  <footer>
+    <img src="assets/logo.png" alt="" class="footer-logo">
+    <p>© <span id="year"></span> PokeTalks · Independent fan project.</p>
+    <p class="muted">Pokémon and related characters belong to their respective rights holders.</p>
+  </footer>
+</body>
+</html>
