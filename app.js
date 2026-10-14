@@ -24,7 +24,7 @@
     "https://ouzqtzkodenqmqdswpov.supabase.co";
 
   const SUPABASE_PUBLISHABLE_KEY =
-    "sb_publishable_o466hZ-jpLQZs5jwEq-bxA-lOzsk24X";
+    "sb_publishable_o466hZ-jpLQZs5jwEq-bxA_lOzsk24X";
 
   const STORAGE_BUCKET = "poketalks-media";
 
