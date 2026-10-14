@@ -239,44 +239,65 @@
 
   
 
-
 async function getImageURL(path) {
   if (!path || !db) return "";
 
-  // Database mein Storage path saved hai.
-  const cleanPath = String(path)
-    .trim()
-    .replace(/^\/+/, "");
+  const cleanPath = String(path).trim().replace(/^\/+/, "");
 
-  // Agar database mein pehle se full URL saved hai.
-  if (/^https?:\/\//i.test(cleanPath)) {
-    try {
-      const url = new URL(cleanPath);
+  const { data, error } = await db.storage
+    .from("poketalks-media")
+    .createSignedUrl(cleanPath, 3600);
 
-      if (
-        url.protocol !== "https:" ||
-        url.hostname !== "ouzqtzkodenqmqdswpov.supabase.co"
-      ) {
-        console.error("Unexpected image URL:", cleanPath);
-        return "";
-      }
-
-      return url.href;
-    } catch {
-      return "";
-    }
+  if (error) {
+    console.error("Signed URL failed:", {
+      path: cleanPath,
+      message: error.message
+    });
+    return "";
   }
 
-  // Public website media ke liye public bucket URL.
-  const { data } = db.storage
-    .from("poketalks-media")
-    .getPublicUrl(cleanPath);
+  console.log("Generated image URL:", data.signedUrl);
 
-  console.log("Image Storage path:", cleanPath);
-  console.log("Image URL:", data.publicUrl);
-
-  return data.publicUrl;
+  return data.signedUrl;
 }
+
+// async function getImageURL(path) {
+//   if (!path || !db) return "";
+
+//   // Database mein Storage path saved hai.
+//   const cleanPath = String(path)
+//     .trim()
+//     .replace(/^\/+/, "");
+
+//   // Agar database mein pehle se full URL saved hai.
+//   if (/^https?:\/\//i.test(cleanPath)) {
+//     try {
+//       const url = new URL(cleanPath);
+
+//       if (
+//         url.protocol !== "https:" ||
+//         url.hostname !== "ouzqtzkodenqmqdswpov.supabase.co"
+//       ) {
+//         console.error("Unexpected image URL:", cleanPath);
+//         return "";
+//       }
+
+//       return url.href;
+//     } catch {
+//       return "";
+//     }
+//   }
+
+  // Public website media ke liye public bucket URL.
+//   const { data } = db.storage
+//     .from("poketalks-media")
+//     .getPublicUrl(cleanPath);
+
+//   console.log("Image Storage path:", cleanPath);
+//   console.log("Image URL:", data.publicUrl);
+
+//   return data.publicUrl;
+// }
 
   
 function attachImageFallback(image, message = "Image unavailable") {
