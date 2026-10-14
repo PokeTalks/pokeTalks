@@ -3,29 +3,62 @@
 
 /*
  * PokeTalks — app.js
- * Public website functionality:
- * - Responsive navigation
- * - PokéQuiz (10 random questions per round)
- * - Pokémon gallery
- * - Video showcase
- * - Social links
  *
- * IMPORTANT:
- * This is a demo-content version.
- * localStorage is NOT shared between devices.
- * Secure admin/database integration is a separate step.
+ * Public website:
+ * - Published Pokémon from Supabase
+ * - Published videos from Supabase
+ * - Supabase Storage image previews
+ * - PokéQuiz: 10 random questions
+ * - Social links
+ * - Responsive navigation
+ *
+ * Admin content is managed separately by admin.js.
  */
 
 (() => {
-  const $ = (selector, root = document) => root.querySelector(selector);
+  // ==========================================
+  // 1. CONFIGURATION
+  // ==========================================
 
-  const STORAGE_KEY = "poketalks-demo-v2";
+  const SUPABASE_URL =
+    "https://ouzqtzkodenqmqdswpov.supabase.co";
+
+  const SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_o466hZ-jpLQZs5jwEq-bxA-lOzsk24X";
+
+  const STORAGE_BUCKET = "poketalks-media";
+
+  const SIGNED_URL_LIFETIME = 3600;
 
   const DEFAULT_SOCIALS = {
-    youtube: "https://youtube.com/@poketalks_yt?si=emFFmVNVH7K7Em3p",
-    telegram: "https://t.me/PokeTalks_Official",
-    instagram: "https://instagram.com/poketalks3/"
+    youtube: "https://youtube.com/@poketalks_yt",
+    instagram: "https://instagram.com/poketalks3/",
+    telegram: "https://t.me/PokeTalks_Official"
   };
+
+  const $ = (selector, root = document) =>
+    root.querySelector(selector);
+
+  // ==========================================
+  // 2. SUPABASE CLIENT
+  // ==========================================
+
+  let db = null;
+
+  if (window.supabase?.createClient) {
+    db = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
+  } else {
+    console.error(
+      "Supabase SDK is missing. Check the Supabase CDN script in index.html."
+    );
+  }
+
+  // ==========================================
+  // 3. POKEQUIZ QUESTIONS
+  // ==========================================
 
   const questions = [
     {
@@ -104,7 +137,7 @@
       correct: "Zapdos"
     },
     {
-      q: "Which Pokémon is famous for carrying a bone?",
+      q: "Which Pokémon carries a bone?",
       a: ["Cubone", "Ditto", "Psyduck", "Eevee"],
       correct: "Cubone"
     },
@@ -124,58 +157,24 @@
       correct: "Jigglypuff"
     },
     {
-      q: "Which Pokémon is the evolved form of Magikarp?",
+      q: "Which Pokémon evolves from Magikarp?",
       a: ["Gyarados", "Dragonite", "Lapras", "Seaking"],
       correct: "Gyarados"
     }
   ];
 
-  function loadState() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  // ==========================================
+  // 4. GENERAL HELPERS
+  // ==========================================
 
-      return {
-        pokemon: Array.isArray(saved.pokemon) ? saved.pokemon : [],
-        videos: Array.isArray(saved.videos) ? saved.videos : [],
-        socials: saved.socials && typeof saved.socials === "object"
-          ? saved.socials
-          : {}
-      };
-    } catch (error) {
-      console.warn("PokeTalks demo storage could not be loaded.", error);
+  function showMessage(container, message, className = "muted") {
+    if (!container) return;
 
-      return {
-        pokemon: [],
-        videos: [],
-        socials: {}
-      };
-    }
-  }
+    const paragraph = document.createElement("p");
+    paragraph.className = className;
+    paragraph.textContent = message;
 
-  let state = loadState();
-
-  function saveState() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      return true;
-    } catch (error) {
-      console.error("Could not save demo content.", error);
-      alert(
-        "Browser storage is full or unavailable. " +
-        "Use the connected Supabase storage system for persistent media."
-      );
-      return false;
-    }
-  }
-
-  function escapeHTML(value = "") {
-    return String(value).replace(/[&<>"']/g, character => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[character]);
+    container.replaceChildren(paragraph);
   }
 
   function safeExternalURL(value) {
@@ -192,383 +191,378 @@
     }
   }
 
-  function readImage(file) {
-    return new Promise((resolve, reject) => {
-      if (!file || !file.type.startsWith("image/")) {
-        reject(new Error("Please select an image file."));
-        return;
+  function safeVideoURL(value) {
+    const url = safeExternalURL(value);
+
+    if (!url) return "";
+
+    try {
+      const parsed = new URL(url);
+
+      if (
+        parsed.protocol === "https:" &&
+        parsed.hostname.toLowerCase() === "linkvertise.com"
+      ) {
+        return parsed.href;
       }
 
-      if (file.size > 2 * 1024 * 1024) {
-        reject(new Error("Please choose an image smaller than 2 MB."));
-        return;
+      if (
+        parsed.protocol === "https:" &&
+        parsed.hostname.toLowerCase().endsWith(".linkvertise.com")
+      ) {
+        return parsed.href;
       }
 
-      const reader = new FileReader();
-
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error("Could not read the image."));
-
-      reader.readAsDataURL(file);
-    });
+      return "";
+    } catch {
+      return "";
+    }
   }
 
-  function renderPokemon() {
+  function makeElement(tag, text, className) {
+    const element = document.createElement(tag);
+
+    if (text !== undefined && text !== null) {
+      element.textContent = String(text);
+    }
+
+    if (className) {
+      element.className = className;
+    }
+
+    return element;
+  }
+
+  // ==========================================
+  // 5. SUPABASE STORAGE IMAGE URL
+  // ==========================================
+
+  async function getImageURL(path) {
+    if (!path || !db) return "";
+
+    const value = String(path).trim();
+
+    if (!value) return "";
+
+    // Support a full HTTP(S) URL if an older record uses one.
+    if (/^https?:\/\//i.test(value)) {
+      return safeExternalURL(value);
+    }
+
+    const { data, error } = await db.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(value, SIGNED_URL_LIFETIME);
+
+    if (error) {
+      console.error("Storage image URL error:", error, value);
+      return "";
+    }
+
+    return data?.signedUrl || "";
+  }
+
+  function attachImageFallback(image, message) {
+    image.addEventListener("error", () => {
+      image.hidden = true;
+
+      const fallback = makeElement(
+        "p",
+        message || "Image unavailable",
+        "muted"
+      );
+
+      image.insertAdjacentElement("afterend", fallback);
+    }, { once: true });
+  }
+
+  // ==========================================
+  // 6. LOAD PUBLISHED POKÉMON
+  // ==========================================
+
+  async function renderPokemon() {
     const grid = $("#pokemonGrid");
 
-    if (grid) {
-      grid.innerHTML = state.pokemon.map(pokemon => `
-        <article class="content-card">
-          <img
-            src="${escapeHTML(pokemon.image)}"
-            alt="${escapeHTML(pokemon.name)}"
-            loading="lazy"
-          >
-          <div class="card-copy">
-            <h3>${escapeHTML(pokemon.name)}</h3>
-            <p>${escapeHTML(pokemon.type)}</p>
-            <p>${escapeHTML(pokemon.description)}</p>
-          </div>
-        </article>
-      `).join("") || '<p class="muted">No Pokémon added yet.</p>';
+    if (!grid) return;
+
+    if (!db) {
+      showMessage(
+        grid,
+        "Supabase load nahi hua. Page ko refresh karke dekho."
+      );
+      return;
     }
 
-    const manage = $("#managePokemon");
+    showMessage(grid, "Loading Pokémon...");
 
-    if (manage) {
-      manage.innerHTML = state.pokemon.map((pokemon, index) => `
-        <div class="manage-row">
-          <span>${escapeHTML(pokemon.name)} — ${escapeHTML(pokemon.type)}</span>
-          <button type="button" data-delete-pokemon="${index}">
-            Delete
-          </button>
-        </div>
-      `).join("") || '<p class="muted">Nothing to manage yet.</p>';
+    const { data, error } = await db
+      .from("pokemon")
+      .select(
+        "id, name, pokemon_type, description, image_url"
+      )
+      .eq("is_published", true)
+      .order("id", { ascending: false });
+
+    if (error) {
+      console.error("Pokémon database error:", error);
+
+      showMessage(
+        grid,
+        "Pokémon load nahi ho paye. Database access aur RLS policies check karo."
+      );
+
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      showMessage(
+        grid,
+        "Abhi koi published Pokémon nahi hai."
+      );
+      return;
+    }
+
+    grid.replaceChildren();
+
+    for (const pokemon of data) {
+      const card = makeElement("article", null, "content-card");
+      const imageURL = await getImageURL(pokemon.image_url);
+
+      if (imageURL) {
+        const image = makeElement("img");
+        image.src = imageURL;
+        image.alt = pokemon.name || "Pokémon";
+        image.loading = "lazy";
+        image.decoding = "async";
+
+        attachImageFallback(image, "Pokémon image unavailable");
+        card.appendChild(image);
+      }
+
+      const copy = makeElement("div", null, "card-copy");
+
+      copy.appendChild(
+        makeElement("h3", pokemon.name || "Pokémon")
+      );
+
+      if (pokemon.pokemon_type) {
+        copy.appendChild(
+          makeElement("p", pokemon.pokemon_type)
+        );
+      }
+
+      if (pokemon.description) {
+        copy.appendChild(
+          makeElement("p", pokemon.description)
+        );
+      }
+
+      card.appendChild(copy);
+      grid.appendChild(card);
     }
   }
 
-  function renderVideos() {
+  // ==========================================
+  // 7. LOAD PUBLISHED VIDEOS
+  // ==========================================
+
+  async function renderVideos() {
     const grid = $("#videoGrid");
 
-    if (grid) {
-      grid.innerHTML = state.videos.map(video => {
-        const link = safeExternalURL(video.url);
+    if (!grid) return;
 
-        return `
-          <article class="content-card">
-            <img
-              src="${escapeHTML(video.image)}"
-              alt="${escapeHTML(video.title)} thumbnail"
-              loading="lazy"
-            >
-            <div class="card-copy">
-              <h3>${escapeHTML(video.title)}</h3>
-              ${
-                link
-                  ? `<a class="button"
-                       href="${escapeHTML(link)}"
-                       target="_blank"
-                       rel="noopener noreferrer">Watch video →</a>`
-                  : '<p>Video link coming soon.</p>'
-              }
-            </div>
-          </article>
-        `;
-      }).join("") || '<p class="muted">Videos coming soon.</p>';
+    if (!db) {
+      showMessage(
+        grid,
+        "Supabase load nahi hua. Page ko refresh karke dekho."
+      );
+      return;
     }
 
-    const manage = $("#manageVideos");
+    showMessage(grid, "Loading videos...");
 
-    if (manage) {
-      manage.innerHTML = state.videos.map((video, index) => `
-        <div class="manage-row">
-          <span>${escapeHTML(video.title)}</span>
-          <button type="button" data-delete-video="${index}">
-            Delete
-          </button>
-        </div>
-      `).join("") || '<p class="muted">Nothing to manage yet.</p>';
+    const { data, error } = await db
+      .from("poketalks_videos")
+      .select(
+        "id, title, description, thumbnail_url, linkvertise_url"
+      )
+      .eq("is_published", true)
+      .order("id", { ascending: false });
+
+    if (error) {
+      console.error("Video database error:", error);
+
+      showMessage(
+        grid,
+        "Videos load nahi ho paye. Database access aur RLS policies check karo."
+      );
+
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      showMessage(
+        grid,
+        "Abhi koi published video nahi hai."
+      );
+      return;
+    }
+
+    grid.replaceChildren();
+
+    for (const video of data) {
+      const card = makeElement("article", null, "content-card");
+      const imageURL = await getImageURL(video.thumbnail_url);
+
+      if (imageURL) {
+        const image = makeElement("img");
+        image.src = imageURL;
+        image.alt = `${video.title || "Video"} thumbnail`;
+        image.loading = "lazy";
+        image.decoding = "async";
+
+        attachImageFallback(image, "Video thumbnail unavailable");
+        card.appendChild(image);
+      }
+
+      const copy = makeElement("div", null, "card-copy");
+
+      copy.appendChild(
+        makeElement("h3", video.title || "Video")
+      );
+
+      if (video.description) {
+        copy.appendChild(
+          makeElement("p", video.description)
+        );
+      }
+
+      const watchURL = safeVideoURL(video.linkvertise_url);
+
+      if (watchURL) {
+        const link = makeElement("a", "Watch video →", "button");
+        link.href = watchURL;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        copy.appendChild(link);
+      } else if (video.linkvertise_url) {
+        copy.appendChild(
+          makeElement("p", "Video link unavailable.")
+        );
+      } else {
+        copy.appendChild(
+          makeElement("p", "Video link coming soon.")
+        );
+      }
+
+      card.appendChild(copy);
+      grid.appendChild(card);
     }
   }
 
+  // ==========================================
+  // 8. SOCIAL LINKS
+  // ==========================================
+
   function renderSocials() {
-    for (const platform of ["youtube", "instagram", "telegram"]) {
+    for (const platform of [
+      "youtube",
+      "instagram",
+      "telegram"
+    ]) {
       const link = document.getElementById(`${platform}Link`);
 
       if (!link) continue;
 
-      const url = safeExternalURL(
-        state.socials[platform] || DEFAULT_SOCIALS[platform]
-      );
+      const url = safeExternalURL(DEFAULT_SOCIALS[platform]);
 
       link.href = url || "#";
       link.target = "_blank";
       link.rel = "noopener noreferrer";
-      link.setAttribute("aria-label", `Open PokeTalks on ${platform}`);
+      link.setAttribute(
+        "aria-label",
+        `Open PokeTalks on ${platform}`
+      );
     }
   }
 
-  // Optional demo forms. They are not a secure admin system.
-  const pokemonForm = $("#pokemonForm");
+  // ==========================================
+  // 9. POKEQUIZ
+  // ==========================================
 
-  if (pokemonForm) {
-    pokemonForm.addEventListener("submit", async event => {
-      event.preventDefault();
-
-      const form = event.currentTarget;
-      const data = new FormData(form);
-
-      try {
-        const image = await readImage(data.get("image"));
-
-        const pokemon = {
-          name: String(data.get("name") || "").trim(),
-          type: String(data.get("type") || "").trim(),
-          description: String(data.get("description") || "").trim(),
-          image
-        };
-
-        if (!pokemon.name || !pokemon.description) {
-          throw new Error("Enter a Pokémon name and description.");
-        }
-
-        state.pokemon.push(pokemon);
-
-        if (!saveState()) {
-          state.pokemon.pop();
-          return;
-        }
-
-        renderPokemon();
-        form.reset();
-
-        alert("Demo Pokémon added in this browser.");
-      } catch (error) {
-        alert(error.message || "Could not add Pokémon.");
-      }
-    });
-  }
-
-  const videoForm = $("#videoForm");
-
-  if (videoForm) {
-    videoForm.addEventListener("submit", async event => {
-      event.preventDefault();
-
-      const form = event.currentTarget;
-      const data = new FormData(form);
-      const url = String(data.get("url") || "").trim();
-
-      if (url) {
-        const parsedURL = safeExternalURL(url);
-
-        if (!parsedURL || !parsedURL.startsWith("https://")) {
-          alert("Enter a valid HTTPS video URL or leave it blank.");
-          return;
-        }
-
-        if (!/^https:\/\/(www\.)?linkvertise\.com\//i.test(parsedURL)) {
-          alert("Enter a valid Linkvertise URL or leave it blank.");
-          return;
-        }
-      }
-
-      try {
-        const image = await readImage(data.get("image"));
-
-        const video = {
-          title: String(data.get("title") || "").trim(),
-          image,
-          url
-        };
-
-        if (!video.title) {
-          throw new Error("Please enter a video title.");
-        }
-
-        state.videos.push(video);
-
-        if (!saveState()) {
-          state.videos.pop();
-          return;
-        }
-
-        renderVideos();
-        form.reset();
-
-        alert("Demo video added in this browser.");
-      } catch (error) {
-        alert(error.message || "Could not add video.");
-      }
-    });
-  }
-
-  const socialForm = $("#socialForm");
-
-  if (socialForm) {
-    socialForm.addEventListener("submit", event => {
-      event.preventDefault();
-
-      const data = new FormData(event.currentTarget);
-      const socials = {};
-
-      for (const platform of ["youtube", "instagram", "telegram"]) {
-        const value = String(data.get(platform) || "").trim();
-
-        if (value && !safeExternalURL(value)) {
-          alert(`Please enter a valid ${platform} URL.`);
-          return;
-        }
-
-        socials[platform] = value;
-      }
-
-      const previous = state.socials;
-      state.socials = socials;
-
-      if (!saveState()) {
-        state.socials = previous;
-        return;
-      }
-
-      renderSocials();
-      alert("Demo social links saved in this browser.");
-    });
-  }
-
-  const managePokemon = $("#managePokemon");
-
-  if (managePokemon) {
-    managePokemon.addEventListener("click", event => {
-      const button = event.target.closest("[data-delete-pokemon]");
-
-      if (!button) return;
-
-      const index = Number(button.dataset.deletePokemon);
-
-      if (!Number.isInteger(index) || !state.pokemon[index]) return;
-      if (!confirm(`Delete ${state.pokemon[index].name}?`)) return;
-
-      const deleted = state.pokemon.splice(index, 1)[0];
-
-      if (!saveState()) {
-        state.pokemon.splice(index, 0, deleted);
-        return;
-      }
-
-      renderPokemon();
-    });
-  }
-
-  const manageVideos = $("#manageVideos");
-
-  if (manageVideos) {
-    manageVideos.addEventListener("click", event => {
-      const button = event.target.closest("[data-delete-video]");
-
-      if (!button) return;
-
-      const index = Number(button.dataset.deleteVideo);
-
-      if (!Number.isInteger(index) || !state.videos[index]) return;
-      if (!confirm(`Delete ${state.videos[index].title}?`)) return;
-
-      const deleted = state.videos.splice(index, 1)[0];
-
-      if (!saveState()) {
-        state.videos.splice(index, 0, deleted);
-        return;
-      }
-
-      renderVideos();
-    });
-  }
-
-  const resetButton = $("#resetDemo");
-
-  if (resetButton) {
-    resetButton.addEventListener("click", () => {
-      if (!confirm("Delete all demo Pokémon, videos and social settings?")) {
-        return;
-      }
-
-      const previous = state;
-
-      state = {
-        pokemon: [],
-        videos: [],
-        socials: {}
-      };
-
-      if (!saveState()) {
-        state = previous;
-        return;
-      }
-
-      renderPokemon();
-      renderVideos();
-      renderSocials();
-    });
-  }
-
-  // PokéQuiz: 10 random questions per round.
-  let round = [];
-  let current = 0;
-  let score = 0;
-  let locked = false;
+  let quizRound = [];
+  let quizCurrent = 0;
+  let quizScore = 0;
+  let quizLocked = false;
 
   function shuffle(list) {
     const result = [...list];
 
     for (let i = result.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [result[i], result[j]] = [result[j], result[i]];
+
+      [result[i], result[j]] = [
+        result[j],
+        result[i]
+      ];
     }
 
     return result;
   }
 
-  function startQuiz() {
-    if (!$("#quizQuestion") || !$("#quizAnswers") || !$("#quizNext")) {
-      return;
-    }
-
-    round = shuffle(questions).slice(0, 10);
-    current = 0;
-    score = 0;
-
-    showQuestion();
-  }
-
-  function showQuestion() {
-    const item = round[current];
-
-    if (!item) return;
-
-    locked = false;
-
-    const progress = $("#quizProgress");
+  function showQuizQuestion() {
     const question = $("#quizQuestion");
     const answers = $("#quizAnswers");
+    const progress = $("#quizProgress");
     const feedback = $("#quizFeedback");
     const next = $("#quizNext");
 
-    if (progress) {
-      progress.textContent = `Question ${current + 1} of 10 · Score: ${score}`;
-    }
+    if (!question || !answers || !next) return;
+
+    const item = quizRound[quizCurrent];
+
+    if (!item) return;
+
+    quizLocked = false;
 
     question.textContent = item.q;
 
+    if (progress) {
+      progress.textContent =
+        `Question ${quizCurrent + 1} of 10 · Score: ${quizScore}`;
+    }
+
     if (feedback) feedback.textContent = "";
 
-    answers.innerHTML = shuffle(item.a).map(answer => `
-      <button class="answer" type="button" data-answer="${escapeHTML(answer)}">
-        ${escapeHTML(answer)}
-      </button>
-    `).join("");
+    answers.replaceChildren();
+
+    for (const answer of shuffle(item.a)) {
+      const button = makeElement("button", answer, "answer");
+
+      button.type = "button";
+      button.dataset.answer = answer;
+
+      answers.appendChild(button);
+    }
 
     next.textContent = "Next question";
     next.disabled = true;
+  }
+
+  function startQuiz() {
+    if (
+      !$("#quizQuestion") ||
+      !$("#quizAnswers") ||
+      !$("#quizNext")
+    ) {
+      return;
+    }
+
+    quizRound = shuffle(questions).slice(0, 10);
+    quizCurrent = 0;
+    quizScore = 0;
+    quizLocked = false;
+
+    showQuizQuestion();
   }
 
   const quizAnswers = $("#quizAnswers");
@@ -577,11 +571,11 @@
     quizAnswers.addEventListener("click", event => {
       const button = event.target.closest("[data-answer]");
 
-      if (!button || locked || !round.length) return;
+      if (!button || quizLocked || !quizRound.length) return;
 
-      locked = true;
+      quizLocked = true;
 
-      const correct = round[current].correct;
+      const correct = quizRound[quizCurrent].correct;
 
       quizAnswers.querySelectorAll("[data-answer]").forEach(option => {
         option.disabled = true;
@@ -592,7 +586,7 @@
       });
 
       if (button.dataset.answer === correct) {
-        score++;
+        quizScore++;
 
         if ($("#quizFeedback")) {
           $("#quizFeedback").textContent = "Correct! ⚡";
@@ -601,16 +595,19 @@
         button.classList.add("wrong");
 
         if ($("#quizFeedback")) {
-          $("#quizFeedback").textContent = `The answer was ${correct}.`;
+          $("#quizFeedback").textContent =
+            `The answer was ${correct}.`;
         }
       }
 
       if ($("#quizProgress")) {
         $("#quizProgress").textContent =
-          `Question ${current + 1} of 10 · Score: ${score}`;
+          `Question ${quizCurrent + 1} of 10 · Score: ${quizScore}`;
       }
 
-      if ($("#quizNext")) $("#quizNext").disabled = false;
+      if ($("#quizNext")) {
+        $("#quizNext").disabled = false;
+      }
     });
   }
 
@@ -619,7 +616,7 @@
   if (quizNext) {
     quizNext.addEventListener("click", () => {
       if (
-        !round.length ||
+        !quizRound.length ||
         quizNext.textContent === "Start quiz" ||
         quizNext.textContent === "Play again"
       ) {
@@ -627,12 +624,12 @@
         return;
       }
 
-      current++;
+      quizCurrent++;
 
-      if (current >= round.length) {
+      if (quizCurrent >= quizRound.length) {
         if ($("#quizQuestion")) {
           $("#quizQuestion").textContent =
-            `Quiz complete! You scored ${score}/10.`;
+            `Quiz complete! You scored ${quizScore}/10.`;
         }
 
         if ($("#quizProgress")) {
@@ -650,33 +647,46 @@
 
         quizNext.textContent = "Play again";
         quizNext.disabled = false;
-        round = [];
+        quizRound = [];
 
         return;
       }
 
-      showQuestion();
+      showQuizQuestion();
     });
   }
 
-  // Mobile navigation.
+  // ==========================================
+  // 10. MOBILE NAVIGATION
+  // ==========================================
+
   const menuToggle = $("#menuToggle");
   const nav = $("#nav");
 
   if (menuToggle && nav) {
+    menuToggle.setAttribute("aria-expanded", "false");
+
     menuToggle.addEventListener("click", () => {
       const isOpen = nav.classList.toggle("open");
 
-      menuToggle.setAttribute("aria-expanded", String(isOpen));
+      menuToggle.setAttribute(
+        "aria-expanded",
+        String(isOpen)
+      );
     });
 
     nav.addEventListener("click", event => {
       if (!event.target.closest("a")) return;
 
       nav.classList.remove("open");
+
       menuToggle.setAttribute("aria-expanded", "false");
     });
   }
+
+  // ==========================================
+  // 11. FOOTER YEAR
+  // ==========================================
 
   const year = $("#year");
 
@@ -684,8 +694,18 @@
     year.textContent = String(new Date().getFullYear());
   }
 
-  // Initial rendering.
-  renderPokemon();
-  renderVideos();
+  // ==========================================
+  // 12. INITIAL LOAD
+  // ==========================================
+
   renderSocials();
+
+  renderPokemon().catch(error => {
+    console.error("Unexpected Pokémon loading error:", error);
+  });
+
+  renderVideos().catch(error => {
+    console.error("Unexpected video loading error:", error);
+  });
+
 })();
