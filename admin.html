@@ -1,141 +1,199 @@
-
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PokeTalks Admin Login</title>
+  <meta name="theme-color" content="#080d18">
+  <title>PokeTalks Admin Panel</title>
 
   <style>
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
+      padding: 24px;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 20px;
       background: #080d18;
       color: #f4f7ff;
       font-family: Arial, sans-serif;
     }
 
-    .login-card {
+    .container {
       width: 100%;
-      max-width: 400px;
-      padding: 28px;
-      background: #121b2b;
-      border: 1px solid #263c55;
-      border-radius: 18px;
-      box-shadow: 0 15px 50px #0006;
+      max-width: 850px;
+      margin: 30px auto;
     }
 
-    h1 { color: #35d9ed; margin-top: 0; }
-    p { color: #aab8ca; line-height: 1.5; }
+    .panel {
+      padding: 24px;
+      margin-bottom: 24px;
+      background: #121b2b;
+      border: 1px solid #263c55;
+      border-radius: 16px;
+    }
+
+    h1, h2 { color: #35d9ed; }
 
     label {
       display: block;
-      margin: 16px 0 7px;
+      margin: 14px 0;
     }
 
-    input {
+    input, textarea {
+      display: block;
       width: 100%;
+      margin-top: 7px;
       padding: 12px;
-      color: white;
-      background: #0a1220;
+      border-radius: 8px;
       border: 1px solid #35465e;
-      border-radius: 9px;
-      font-size: 16px;
+      background: #0a1220;
+      color: white;
+    }
+
+    input[type="checkbox"] {
+      display: inline;
+      width: auto;
     }
 
     button {
-      width: 100%;
-      margin-top: 20px;
-      padding: 13px;
+      padding: 12px 18px;
+      margin: 8px 5px 8px 0;
       border: 0;
-      border-radius: 9px;
+      border-radius: 8px;
       background: #23c8df;
       color: #07111d;
       font-weight: bold;
-      font-size: 16px;
       cursor: pointer;
     }
 
-    #message {
+    .danger { background: #ff647c; }
+
+    a { color: #35d9ed; }
+
+    [hidden] { display: none !important; }
+
+    #message, #adminStatus {
       overflow-wrap: anywhere;
-      margin-top: 16px;
+      line-height: 1.6;
+    }
+
+    article {
+      padding: 16px;
+      margin: 12px 0;
+      border: 1px solid #35465e;
+      border-radius: 10px;
     }
   </style>
 </head>
+
 <body>
-  <main class="login-card">
-    <h1>PokeTalks Admin</h1>
-    <p>Sign in with your authorized administrator account.</p>
+  <main class="container">
+    <a href="./index.html">← Back to PokeTalks</a>
 
-    <form id="loginForm">
-      <label for="email">Email address</label>
-      <input id="email" type="email"
-             autocomplete="username" required>
+    <!-- LOGIN PANEL -->
+    <section id="loginPanel" class="panel">
+      <h1>PokeTalks Admin</h1>
+      <p>Sign in with your authorized administrator account.</p>
 
-      <label for="password">Password</label>
-      <input id="password" type="password"
-             autocomplete="current-password" required>
+      <form id="loginForm">
+        <label for="email">Email address</label>
+        <input id="email" type="email"
+               autocomplete="username" required>
 
-      <button type="submit">Log in</button>
-    </form>
+        <label for="password">Password</label>
+        <input id="password" type="password"
+               autocomplete="current-password" required>
 
-    <p id="message" role="status" aria-live="polite"></p>
-    <a href="./index.html" style="color:#35d9ed">Back to website</a>
-    <div id="loginPanel">
-  <!-- Existing login form isi panel mein rakho -->
-</div>
+        <button id="loginButton" type="submit">Log in</button>
+      </form>
 
-<section id="dashboard" hidden>
-  <h2>Admin Dashboard</h2>
-  <p id="adminStatus" role="status"></p>
+      <p id="message" role="status" aria-live="polite"></p>
+    </section>
 
-  <button id="logoutButton" type="button">
-    Log out
-  </button>
+    <!-- DASHBOARD: hidden until admin verification succeeds -->
+    <section id="dashboard" class="panel" hidden>
+      <h1>Admin Dashboard</h1>
+      <p id="adminStatus" role="status" aria-live="polite"></p>
 
-  <h3>Manage Pokémon</h3>
-  <form id="pokemonForm">
-    <input id="pokemonName" placeholder="Pokémon name" required>
-    <input id="pokemonType" placeholder="Pokémon type">
-    <textarea id="pokemonDescription"
-      placeholder="Description" required></textarea>
-    <input id="pokemonImage" type="file"
-      accept="image/jpeg,image/png,image/webp" required>
-    <label>
-      <input id="pokemonPublished" type="checkbox">
-      Publish Pokémon
-    </label>
-    <button type="submit">Save Pokémon</button>
-  </form>
+      <button id="logoutButton" type="button" class="danger">
+        Log out
+      </button>
 
-  <div id="pokemonList"></div>
+      <hr>
 
-  <h3>Manage Videos</h3>
-  <form id="videoForm">
-    <input id="videoTitle" placeholder="Video title" required>
-    <textarea id="videoDescription"
-      placeholder="Description"></textarea>
-    <input id="videoImage" type="file"
-      accept="image/jpeg,image/png,image/webp" required>
-    <input id="videoLink" type="url"
-      placeholder="Linkvertise URL (optional)">
-    <label>
-      <input id="videoPublished" type="checkbox">
-      Publish video
-    </label>
-    <button type="submit">Save video</button>
-  </form>
+      <h2>Add Pokémon</h2>
+      <form id="pokemonForm">
+        <label>Pokémon name
+          <input id="pokemonName" required>
+        </label>
 
-  <div id="videoList"></div>
-</section>
+        <label>Pokémon type
+          <input id="pokemonType">
+        </label>
+
+        <label>Description
+          <textarea id="pokemonDescription" required></textarea>
+        </label>
+
+        <label>Pokémon image
+          <input id="pokemonImage"
+                 type="file"
+                 accept="image/jpeg,image/png,image/webp"
+                 required>
+        </label>
+
+        <label>
+          <input id="pokemonPublished" type="checkbox">
+          Publish Pokémon
+        </label>
+
+        <button type="submit">Save Pokémon</button>
+      </form>
+
+      <h2>Manage Pokémon</h2>
+      <div id="pokemonList"></div>
+
+      <hr>
+
+      <h2>Add Video</h2>
+      <form id="videoForm">
+        <label>Video title
+          <input id="videoTitle" required>
+        </label>
+
+        <label>Description
+          <textarea id="videoDescription"></textarea>
+        </label>
+
+        <label>Thumbnail
+          <input id="videoImage"
+                 type="file"
+                 accept="image/jpeg,image/png,image/webp"
+                 required>
+        </label>
+
+        <label>Linkvertise URL (optional)
+          <input id="videoLink"
+                 type="url"
+                 placeholder="https://linkvertise.com/...">
+        </label>
+
+        <label>
+          <input id="videoPublished" type="checkbox">
+          Publish video
+        </label>
+
+        <button type="submit">Save Video</button>
+      </form>
+
+      <h2>Manage Videos</h2>
+      <div id="videoList"></div>
+    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./admin.js"></script>
 </body>
 </html>
+```
