@@ -239,54 +239,59 @@
 
   
 
+
 async function getImageURL(path) {
   if (!path || !db) return "";
 
-  let cleanPath = String(path).trim();
+  // Database mein Storage path saved hai.
+  const cleanPath = String(path)
+    .trim()
+    .replace(/^\/+/, "");
 
-  // Full Supabase Storage URL ho to directly use karo.
+  // Agar database mein pehle se full URL saved hai.
   if (/^https?:\/\//i.test(cleanPath)) {
-    return cleanPath;
+    try {
+      const url = new URL(cleanPath);
+
+      if (
+        url.protocol !== "https:" ||
+        url.hostname !== "ouzqtzkodenqmqdswpov.supabase.co"
+      ) {
+        console.error("Unexpected image URL:", cleanPath);
+        return "";
+      }
+
+      return url.href;
+    } catch {
+      return "";
+    }
   }
 
-  cleanPath = cleanPath.replace(/^\/+/, "");
-
-  // Database mein sirf bucket-relative path hona chahiye.
-  // Agar path mein bucket name bhi hai, to use remove karo.
-  if (cleanPath.startsWith("poketalks-media/")) {
-    cleanPath = cleanPath.slice("poketalks-media/".length);
-  }
-
-  const { data, error } = await db.storage
+  // Public website media ke liye public bucket URL.
+  const { data } = db.storage
     .from("poketalks-media")
-    .createSignedUrl(cleanPath, 3600);
+    .getPublicUrl(cleanPath);
 
-  if (error) {
-    console.error("Storage image URL error:", {
-      path: cleanPath,
-      message: error.message
-    });
+  console.log("Image Storage path:", cleanPath);
+  console.log("Image URL:", data.publicUrl);
 
-    return "";
-  }
-
-  return data?.signedUrl || "";
+  return data.publicUrl;
 }
 
     
-  function attachImageFallback(image, message) {
-    image.addEventListener("error", () => {
-      image.hidden = true;
+  // function attachImageFallback(image, message) {
+  //   image.addEventListener("error", () => {
+  //     image.hidden = true;
 
-      const fallback = makeElement(
-        "p",
-        message || "Image unavailable",
-        "muted"
-      );
+  //     const fallback = makeElement(
+  //       "p",
+  //       message || "Image unavailable",
+  //       "muted"
+  //     );
 
-      image.insertAdjacentElement("afterend", fallback);
-    }, { once: true });
-  }
+  //     image.insertAdjacentElement("afterend", fallback);
+  //   }, { once: true });
+  // }
 
   // ==========================================
   // 6. LOAD PUBLISHED POKÉMON
