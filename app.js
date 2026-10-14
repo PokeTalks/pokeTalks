@@ -238,13 +238,24 @@
   // ==========================================
 
   
-async function getImageURL(path) {
-  if (!path) return "";
 
-  // Database mein storage path save hona chahiye,
-  // poora signed URL nahi.
-  const cleanPath = String(path)
-    .replace(/^\/+/, "");
+async function getImageURL(path) {
+  if (!path || !db) return "";
+
+  let cleanPath = String(path).trim();
+
+  // Full Supabase Storage URL ho to directly use karo.
+  if (/^https?:\/\//i.test(cleanPath)) {
+    return cleanPath;
+  }
+
+  cleanPath = cleanPath.replace(/^\/+/, "");
+
+  // Database mein sirf bucket-relative path hona chahiye.
+  // Agar path mein bucket name bhi hai, to use remove karo.
+  if (cleanPath.startsWith("poketalks-media/")) {
+    cleanPath = cleanPath.slice("poketalks-media/".length);
+  }
 
   const { data, error } = await db.storage
     .from("poketalks-media")
@@ -255,10 +266,11 @@ async function getImageURL(path) {
       path: cleanPath,
       message: error.message
     });
+
     return "";
   }
 
-  return data.signedUrl;
+  return data?.signedUrl || "";
 }
 
     
