@@ -261,56 +261,45 @@
 //   return data.signedUrl;
 // }
 
+
 async function getImageURL(path) {
   if (!path || !db) return "";
 
-  // Database mein Storage path saved hai.
-  const cleanPath = String(path)
-    .trim()
-    .replace(/^\/+/, "");
+  const cleanPath = String(path).trim().replace(/^\/+/, "");
 
-  // Agar database mein pehle se full URL saved hai.
+  // Database mein full URL hai to use directly return karo.
   if (/^https?:\/\//i.test(cleanPath)) {
-    try {
-      const url = new URL(cleanPath);
-
-      if (
-        url.protocol !== "https:" ||
-        url.hostname !== "ouzqtzkodenqmqdswpov.supabase.co"
-      ) {
-        console.error("Unexpected image URL:", cleanPath);
-        return "";
-      }
-
-      return url.href;
-    } catch {
-      return "";
-    }
+    return cleanPath;
   }
 
-  Public website media ke liye public bucket URL.
-  const { data } = db.storage
-    .from("poketalks-media")
-    .getPublicUrl(cleanPath);
+  const { data, error } = await db.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrl(cleanPath, SIGNED_URL_LIFETIME);
 
-  console.log("Image Storage path:", cleanPath);
-  console.log("Image URL:", data.publicUrl);
+  if (error) {
+    console.error("Storage image URL error:", {
+      path: cleanPath,
+      message: error.message
+    });
+    return "";
+  }
 
-  return data.publicUrl;
+  return data.signedUrl;
 }
 
   
-// function attachImageFallback(image, message = "Image unavailable") {
-//   image.addEventListener("error", () => {
-//     image.hidden = true;
 
-//     const fallback = document.createElement("p");
-//     fallback.className = "muted";
-//     fallback.textContent = message;
+function attachImageFallback(image, message = "Image unavailable") {
+  image.addEventListener("error", () => {
+    image.hidden = true;
 
-//     image.insertAdjacentElement("afterend", fallback);
-//   }, { once: true });
-// }
+    const fallback = document.createElement("p");
+    fallback.className = "muted";
+    fallback.textContent = message;
+
+    image.insertAdjacentElement("afterend", fallback);
+  }, { once: true });
+}
   
 
   // ==========================================
