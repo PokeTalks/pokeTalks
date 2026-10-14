@@ -86,6 +86,53 @@
 
     <p id="message" role="status" aria-live="polite"></p>
     <a href="./index.html" style="color:#35d9ed">Back to website</a>
+    <div id="loginPanel">
+  <!-- Existing login form isi panel mein rakho -->
+</div>
+
+<section id="dashboard" hidden>
+  <h2>Admin Dashboard</h2>
+  <p id="adminStatus" role="status"></p>
+
+  <button id="logoutButton" type="button">
+    Log out
+  </button>
+
+  <h3>Manage Pokémon</h3>
+  <form id="pokemonForm">
+    <input id="pokemonName" placeholder="Pokémon name" required>
+    <input id="pokemonType" placeholder="Pokémon type">
+    <textarea id="pokemonDescription"
+      placeholder="Description" required></textarea>
+    <input id="pokemonImage" type="file"
+      accept="image/jpeg,image/png,image/webp" required>
+    <label>
+      <input id="pokemonPublished" type="checkbox">
+      Publish Pokémon
+    </label>
+    <button type="submit">Save Pokémon</button>
+  </form>
+
+  <div id="pokemonList"></div>
+
+  <h3>Manage Videos</h3>
+  <form id="videoForm">
+    <input id="videoTitle" placeholder="Video title" required>
+    <textarea id="videoDescription"
+      placeholder="Description"></textarea>
+    <input id="videoImage" type="file"
+      accept="image/jpeg,image/png,image/webp" required>
+    <input id="videoLink" type="url"
+      placeholder="Linkvertise URL (optional)">
+    <label>
+      <input id="videoPublished" type="checkbox">
+      Publish video
+    </label>
+    <button type="submit">Save video</button>
+  </form>
+
+  <div id="videoList"></div>
+</section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
