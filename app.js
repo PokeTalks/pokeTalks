@@ -300,17 +300,17 @@ async function getImageURL(path) {
 }
 
   
-function attachImageFallback(image, message = "Image unavailable") {
-  image.addEventListener("error", () => {
-    image.hidden = true;
+// function attachImageFallback(image, message = "Image unavailable") {
+//   image.addEventListener("error", () => {
+//     image.hidden = true;
 
-    const fallback = document.createElement("p");
-    fallback.className = "muted";
-    fallback.textContent = message;
+//     const fallback = document.createElement("p");
+//     fallback.className = "muted";
+//     fallback.textContent = message;
 
-    image.insertAdjacentElement("afterend", fallback);
-  }, { once: true });
-}
+//     image.insertAdjacentElement("afterend", fallback);
+//   }, { once: true });
+// }
   
 
   // ==========================================
