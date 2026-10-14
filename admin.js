@@ -96,11 +96,18 @@ $("loginForm").addEventListener("submit", async (event) => {
 });
 
 $("logoutButton").addEventListener("click", async () => {
-  await db.auth.signOut();
+  const { error } = await db.auth.signOut();
+
+  if (error) {
+    status("Logout failed: " + error.message);
+    return;
+  }
+
   currentUser = null;
   $("dashboard").hidden = true;
   $("loginPanel").hidden = false;
-  status("Logged out.");
+  $("loginForm").reset();
+  status("You have logged out successfully.");
 });
 
 async function uploadImage(file) {
