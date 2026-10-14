@@ -388,16 +388,16 @@
       .eq("is_published", true)
       .order("id", { ascending: false });
 
-    if (error) {
-      console.error("Video database error:", error);
-
-      showMessage(
-        grid,
-        "Videos load nahi ho paye. Database access aur RLS policies check karo."
-      );
-
-      return;
-    }
+    
+if (error) {
+  console.error("Pokémon database error:", {
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+    code: error.code
+  });
+  return;
+}
 
     if (!data || data.length === 0) {
       showMessage(
