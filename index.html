@@ -7,7 +7,8 @@
   <meta name="theme-color" content="#080c13">
   <title>PokeTalks | Pokémon Fan Universe</title>
   <link rel="stylesheet" href="style.css">
-  <script src="app.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js" defer></script>
 </head>
   
 <body>
@@ -27,7 +28,7 @@
       <a href="#contact">Contact</a>
     </nav>
 
-    <a class="admin-link" href="#admin">Admin</a>
+    <a class="admin-link" href="./admin.html">Admin Login</a>
   </header>
 
   <main>
@@ -88,54 +89,7 @@
       </div>
     </section>
 
-    <section class="section alternate" id="admin">
-      <span class="eyebrow">SITE MANAGEMENT</span>
-      <h2>Admin Panel</h2>
-      <p class="muted warning">
-        Starter demo only: this panel is not password-protected.
-        Do not publish it as a public admin panel.
-      </p>
-
-      <div class="admin-grid">
-        <form id="pokemonForm" class="panel">
-          <h3>Add Pokémon</h3>
-          <label>Name<input name="name" required placeholder="Pokémon name"></label>
-          <label>Type<input name="type" required placeholder="Electric / Fire"></label>
-          <label>Description<textarea name="description" required></textarea></label>
-          <label>Image<input name="image" type="file" accept="image/*" required></label>
-          <button class="button">Add Pokémon</button>
-        </form>
-
-        <form id="videoForm" class="panel">
-          <h3>Add Video</h3>
-          <label>Title<input name="title" required></label>
-          <label>Thumbnail<input name="image" type="file" accept="image/*" required></label>
-          <label>Linkvertise URL<input name="url" type="url" placeholder="Add later if needed"></label>
-          <button class="button">Add Video</button>
-        </form>
-
-        <form id="socialForm" class="panel">
-          
-
-<div class="socials">
-  <a href="https://youtube.com/@poketalks_yt"
-     target="_blank" rel="noopener noreferrer">▶ YouTube</a>
-
-  <a href="https://t.me/PokeTalks_Official"
-     target="_blank" rel="noopener noreferrer">✈ Telegram</a>
-
-  <a href="https://instagram.com/poketalks3/"
-     target="_blank" rel="noopener noreferrer">◎ Instagram</a>
-</div>
-        </form>
-      </div>
-
-      <h3 class="manage-heading">Manage Pokémon</h3>
-      <div id="managePokemon" class="manage-list"></div>
-      <h3 class="manage-heading">Manage Videos</h3>
-      <div id="manageVideos" class="manage-list"></div>
-      <button class="button danger" id="resetDemo">Reset demo content</button>
-    </section>
+   
   </main>
 
   <footer>
@@ -146,8 +100,8 @@
 </body>
   
 <!-- Supabase JavaScript client -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 
 <!-- Existing website script -->
-<script src="./app.js"></script>
+
 </html>
