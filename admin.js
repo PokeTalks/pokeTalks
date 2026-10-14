@@ -14,7 +14,11 @@ const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 let currentUser = null;
 
 function status(message) {
-  $("adminStatus").textContent = message;
+  const element =
+    document.getElementById("adminStatus") ||
+    document.getElementById("message");
+
+  if (element) element.textContent = message;
 }
 
 function safeText(value) {
