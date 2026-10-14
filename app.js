@@ -278,20 +278,19 @@ async function getImageURL(path) {
   return data.publicUrl;
 }
 
-    
-  // function attachImageFallback(image, message) {
-  //   image.addEventListener("error", () => {
-  //     image.hidden = true;
+  
+function attachImageFallback(image, message = "Image unavailable") {
+  image.addEventListener("error", () => {
+    image.hidden = true;
 
-  //     const fallback = makeElement(
-  //       "p",
-  //       message || "Image unavailable",
-  //       "muted"
-  //     );
+    const fallback = document.createElement("p");
+    fallback.className = "muted";
+    fallback.textContent = message;
 
-  //     image.insertAdjacentElement("afterend", fallback);
-  //   }, { once: true });
-  // }
+    image.insertAdjacentElement("afterend", fallback);
+  }, { once: true });
+}
+  
 
   // ==========================================
   // 6. LOAD PUBLISHED POKÉMON
