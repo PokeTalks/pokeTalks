@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PokeTalks Admin</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="admin-page">
+    <h1>PokeTalks Admin</h1>
+    <p>Authorized administrators only.</p>
+
+    <section id="loginPanel">
+      <h2>Admin Login</h2>
+      <form id="loginForm">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="username" required>
+
+        <label for="password">Password</label>
+        <input id="password" type="password"
+               autocomplete="current-password" required>
+
+        <button type="submit">Log in</button>
+      </form>
+    </section>
+
+    <section id="dashboard" hidden>
+      <p id="adminStatus" role="status"></p>
+      <button id="logoutButton" type="button">Log out</button>
+
+      <hr>
+      <h2>Pokémon Gallery</h2>
+      <form id="pokemonForm">
+        <label for="pokemonName">Name</label>
+        <input id="pokemonName" required>
+
+        <label for="pokemonType">Type</label>
+        <input id="pokemonType">
+
+        <label for="pokemonDescription">Description</label>
+        <textarea id="pokemonDescription"></textarea>
+
+        <label for="pokemonImage">Image</label>
+        <input id="pokemonImage" type="file"
+               accept="image/png,image/jpeg,image/webp">
+
+        <label>
+          <input id="pokemonPublished" type="checkbox">
+          Publish on website
+        </label>
+
+        <button type="submit">Add Pokémon</button>
+      </form>
+      <div id="pokemonList"></div>
+
+      <hr>
+      <h2>Video Thumbnails</h2>
+      <form id="videoForm">
+        <label for="videoTitle">Video title</label>
+        <input id="videoTitle" required>
+
+        <label for="videoDescription">Description</label>
+        <textarea id="videoDescription"></textarea>
+
+        <label for="videoImage">Thumbnail</label>
+        <input id="videoImage" type="file"
+               accept="image/png,image/jpeg,image/webp">
+
+        <label for="videoLink">Linkvertise URL (optional)</label>
+        <input id="videoLink" type="url"
+               placeholder="Add this later">
+
+        <label>
+          <input id="videoPublished" type="checkbox">
+          Publish on website
+        </label>
+
+        <button type="submit">Add video</button>
+      </form>
+      <div id="videoList"></div>
+    </section>
+
+    <p><a href="./index.html">← Back to PokeTalks</a></p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./admin.js"></script>
+</body>
+</html>
