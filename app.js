@@ -237,30 +237,31 @@
   // 5. SUPABASE STORAGE IMAGE URL
   // ==========================================
 
-  async function getImageURL(path) {
-    if (!path || !db) return "";
+  
+async function getImageURL(path) {
+  if (!path) return "";
 
-    const value = String(path).trim();
+  // Database mein storage path save hona chahiye,
+  // poora signed URL nahi.
+  const cleanPath = String(path)
+    .replace(/^\/+/, "");
 
-    if (!value) return "";
+  const { data, error } = await db.storage
+    .from("poketalks-media")
+    .createSignedUrl(cleanPath, 3600);
 
-    // Support a full HTTP(S) URL if an older record uses one.
-    if (/^https?:\/\//i.test(value)) {
-      return safeExternalURL(value);
-    }
-
-    const { data, error } = await db.storage
-      .from(STORAGE_BUCKET)
-      .createSignedUrl(value, SIGNED_URL_LIFETIME);
-
-    if (error) {
-      console.error("Storage image URL error:", error, value);
-      return "";
-    }
-
-    return data?.signedUrl || "";
+  if (error) {
+    console.error("Storage image URL error:", {
+      path: cleanPath,
+      message: error.message
+    });
+    return "";
   }
 
+  return data.signedUrl;
+}
+
+    
   function attachImageFallback(image, message) {
     image.addEventListener("error", () => {
       image.hidden = true;
